@@ -2,6 +2,7 @@
 using PasswordManagerApi.Data;
 using Microsoft.IdentityModel.Tokens;
 using PasswordManagerApi.Models;
+using PasswordManagerApi.Interfaces;
 
 //-Resource based
 //- get account by account ID
@@ -24,112 +25,96 @@ using PasswordManagerApi.Models;
 
 namespace PasswordManagerApi.Controllers
 {
-    /// <summary>
-    /// Retrieves all accounts.
-    /// </summary>
-    /// <remarks>
-    /// This method retrieves all accounts stored in the system.
-    /// </remarks>
     [Route("api/accounts")]
     [ApiController]
-    public class AccountController(ApplicationDbContext applicationDbContext) : ControllerBase
+    public class AccountController(IAccountRepository accountRepository) : ControllerBase
     {
-        [HttpGet("all")]
+        /// <summary>
+        /// Retrieves all accounts.
+        /// </summary>
+        /// <returns>A list of accounts.</returns>
+        [HttpGet]
         public IActionResult GetAllAccounts()
         {
-            var accounts = applicationDbContext.Accounts.ToList();
+            var accounts = accountRepository.GetAllAccounts();
 
             if (accounts.IsNullOrEmpty())
             {
                 return NotFound();
             }
-            else
-            {
-                return Ok(accounts);
-            }
+            
+            return Ok(accounts);
         }
 
+        /// <summary>
+        /// Retrieves an account by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the account to retrieve.</param>
+        /// <returns>The account information.</returns>
         [HttpGet("{id}")]
         public IActionResult GetAccountById([FromRoute] int id)
         {
-            var account = applicationDbContext.Accounts.Find(id);
+            var account = accountRepository.GetAccountById(id);
 
             if (account == null)
             {
                 return NotFound();
             }
-            else
-            {
-                return Ok(account);
-            }
+
+            return Ok(account);
         }
 
-        [HttpPost("new")]
+        /// <summary>
+        /// Creates a new account.
+        /// </summary>
+        /// <param name="account">The account to create.</param>
+        /// <returns>The newly created account.</returns>
+        [HttpPost]
         public IActionResult CreateAccount([FromBody] AccountModel account)
         {
             if (account == null)
             {
                 return BadRequest();
             }
-            try
-            {
-                applicationDbContext.Accounts.Add(account);
-                applicationDbContext.SaveChanges();
-                return CreatedAtAction(nameof(GetAccountById), new {id = account.Id}, new { id = account.Id });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
+               
+            accountRepository.CreateAccount(account);
+            return CreatedAtAction(nameof(GetAccountById), new {id = account.Id}, new { id = account.Id });
         }
 
-        [HttpPut("update/{id}")]
+        /// <summary>
+        /// Updates an existing account.
+        /// </summary>
+        /// <param name="id">The ID of the account to update.</param>
+        /// <param name="account">The updated account information.</param>
+        /// <returns>The updated account information.</returns>
+        [HttpPut("{id}")]
         public IActionResult UpdateAccount([FromRoute] int id, [FromBody] AccountModel account)
         {
-            var accountToUpdate = applicationDbContext.Accounts.Find(id);
+            var accountToUpdate = accountRepository.UpdateAccount(id, account);
 
             if (accountToUpdate == null)
             {
                 return NotFound();
             }
-            try
-            {
-                accountToUpdate.Title = account.Title;
-                accountToUpdate.Url = account.Url;
-                accountToUpdate.Email = account.Email;
-                accountToUpdate.Username = account.Username;
-                accountToUpdate.Password = account.Password;
-                accountToUpdate.Notes = account.Notes;
-                accountToUpdate.Favorite = account.Favorite;
-
-                applicationDbContext.SaveChanges();
-                return Ok(accountToUpdate);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
+            
+            return Ok(accountToUpdate);
         }
-
-        [HttpDelete("delete/{id}")]
+                /// <summary>
+        /// Deletes an account by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the account to delete.</param>
+        /// <returns>No content.</returns>
+        [HttpDelete("{id}")]
         public IActionResult DeleteAccount([FromRoute] int id)
         {
-            var accountToDelete = applicationDbContext.Accounts.Find(id);
+            var accountToDelete = accountRepository.DeleteAccount(id);
 
             if (accountToDelete == null)
             {
                 return NotFound();
             }
-            try
-            {
-                applicationDbContext.Remove(id);
-                applicationDbContext.SaveChanges();
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
+            
+            return NoContent();
         }
     }
 }
