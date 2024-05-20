@@ -40,7 +40,7 @@ namespace PasswordManagerApi.Controllers
 
             if (accounts.IsNullOrEmpty())
             {
-                return NotFound();
+                return NoContent();
             }
             
             return Ok(accounts);
