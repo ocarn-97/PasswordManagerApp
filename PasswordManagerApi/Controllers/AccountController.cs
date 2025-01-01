@@ -1,83 +1,120 @@
-﻿ using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using PasswordManagerApi.Data;
+using Microsoft.IdentityModel.Tokens;
+using PasswordManagerApi.Models;
+using PasswordManagerApi.Interfaces;
+
+//-Resource based
+//- get account by account ID
+//	- GET account/:ID
+//        - return account in JSON body
+
+//	- POST account/new
+//        - return account ID
+
+//  - PUT account /:ID / update
+
+//        - return 204 or 200 with updated account info
+
+//	- DEL account/:ID
+//        - return 204
+
+//- get accounts for given userid
+//	- GET :userID / accounts
+//        - return list of json bodies
 
 namespace PasswordManagerApi.Controllers
 {
-    public class AccountController : Controller
+    [Route("api/accounts")]
+    [ApiController]
+    public class AccountController(IAccountRepository accountRepository) : ControllerBase
     {
-        // GET: AccountController
-        public ActionResult Index()
+        /// <summary>
+        /// Retrieves all accounts.
+        /// </summary>
+        /// <returns>A list of accounts.</returns>
+        [HttpGet]
+        public IActionResult GetAllAccounts()
         {
-            return View();
+            var accounts = accountRepository.GetAllAccounts();
+
+            if (accounts.IsNullOrEmpty())
+            {
+                return NoContent();
+            }
+            
+            return Ok(accounts);
         }
 
-        // GET: AccountController/Details/5
-        public ActionResult Details(int id)
+        /// <summary>
+        /// Retrieves an account by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the account to retrieve.</param>
+        /// <returns>The account information.</returns>
+        [HttpGet("{id}")]
+        public IActionResult GetAccountById([FromRoute] int id)
         {
-            return View();
+            var account = accountRepository.GetAccountById(id);
+
+            if (account == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(account);
         }
 
-        // GET: AccountController/Create
-        public ActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: AccountController/Create
+        /// <summary>
+        /// Creates a new account.
+        /// </summary>
+        /// <param name="account">The account to create.</param>
+        /// <returns>The newly created account.</returns>
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public IActionResult CreateAccount([FromBody] AccountModel account)
         {
-            try
+            if (account == null)
             {
-                return RedirectToAction(nameof(Index));
+                return BadRequest();
             }
-            catch
-            {
-                return View();
-            }
+               
+            accountRepository.CreateAccount(account);
+            return CreatedAtAction(nameof(GetAccountById), new {id = account.Id}, new { id = account.Id });
         }
 
-        // GET: AccountController/Edit/5
-        public ActionResult Edit(int id)
+        /// <summary>
+        /// Updates an existing account.
+        /// </summary>
+        /// <param name="id">The ID of the account to update.</param>
+        /// <param name="account">The updated account information.</param>
+        /// <returns>The updated account information.</returns>
+        [HttpPut("{id}")]
+        public IActionResult UpdateAccount([FromRoute] int id, [FromBody] AccountModel account)
         {
-            return View();
-        }
+            var accountToUpdate = accountRepository.UpdateAccount(id, account);
 
-        // POST: AccountController/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
-        {
-            try
+            if (accountToUpdate == null)
             {
-                return RedirectToAction(nameof(Index));
+                return NotFound();
             }
-            catch
-            {
-                return View();
-            }
+            
+            return Ok(accountToUpdate);
         }
-
-        // GET: AccountController/Delete/5
-        public ActionResult Delete(int id)
+                /// <summary>
+        /// Deletes an account by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the account to delete.</param>
+        /// <returns>No content.</returns>
+        [HttpDelete("{id}")]
+        public IActionResult DeleteAccount([FromRoute] int id)
         {
-            return View();
-        }
+            var accountToDelete = accountRepository.DeleteAccount(id);
 
-        // POST: AccountController/Delete/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
-        {
-            try
+            if (accountToDelete == null)
             {
-                return RedirectToAction(nameof(Index));
+                return NotFound();
             }
-            catch
-            {
-                return View();
-            }
+            
+            return NoContent();
         }
     }
 }
