@@ -17,7 +17,7 @@ To run this project locally, ensure you have the following installed:
 
 ### Clone the Repository
 ```bash
-git clone https://github.com/Owen-Frankie-Projects/PasswordManagerApp.git
+git clone https://github.com/ocarn-97/PasswordManagerApp.git
 cd PasswordManagerApp
 ```
 
